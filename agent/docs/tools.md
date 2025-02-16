@@ -1,129 +1,75 @@
-# Tools Guide
+# CrewAI Tools Overview
 
-## Overview
-The Hello World Agent is designed to be extensible with custom tools. This guide will walk you through the process of creating, integrating, and using tools within the agent framework.
+CrewAI offers a diverse set of tools that enhance AI agent capabilities. This document outlines the key tools available, categorized by their functionality. The suite of tools enables tasks ranging from web content search to document processing, media handling, development and database operations.
 
-## Tool Structure
-Tools are located in the `agent/tools/` directory. Each tool is a Python module that can be imported and used by the agent.
+## Implemented Tools
 
-### Example Tool Structure
-```
-agent/
-└── tools/
-    ├── __init__.py
-    ├── custom_tool.py
-    └── user_prompt.py
-```
+- **WebsiteSearchTool**: Enables searching across specific websites. (See `agent/tools/website_search_tool.py`)
+- **SeleniumScrapingTool**: Performs advanced web scraping with CSS selector support. (See `agent/tools/selenium_scraping_tool.py`)
+- **PDFSearchTool**: Searches within PDF documents. (See `agent/tools/pdf_search_tool.py`)
 
-## Creating a New Tool
+## Extended Tool Categories
 
-### Step 1: Create a New Python File
-Create a new Python file in the `agent/tools/` directory. For example, `my_tool.py`.
+### Search and Content Tools
 
-### Step 2: Define the Tool's Functionality
-Implement the tool's functionality in the new file. Here's a basic template:
+#### Web Tools
+- **WebsiteSearchTool**: Enables searching across specific websites or the entire web [2].
+- **ScrapeWebsiteTool**: Extracts content from specified web pages [2].
+- **SeleniumScrapingTool**: Performs advanced web scraping with CSS selector support [2].
+- **EXA Search Web Loader**: Facilitates web content loading and searching [5].
 
-```python
-# my_tool.py
+#### Media Tools
+- **YoutubeVideoSearchTool**: Searches within specific videos or across YouTube content [2].
+- **YouTube Channel RAG Search**: Enables searching through channel content [5].
+- **DALL-E Tool**: Generates and processes images [5].
+- **Vision Tool**: Handles visual processing tasks [5].
 
-def my_tool_function(input_data):
-    """
-    Process input_data and return the result.
-    """
-    # Implement your tool's logic here
-    result = f"Processed: {input_data}"
-    return result
-```
+### Document Processing Tools
 
-### Step 3: Integrate the Tool with the Agent
-To use the tool within the agent, import it in `agent/main.py` or any other relevant module:
+#### File Management
+- **PDFSearchTool**: Searches within PDF documents [2].
+- **FileWriterTool**: Writes content to files [1].
+- **FileReadTool**: Reads content from files [5].
+- **Directory RAG Search**: Searches through directory contents [5].
 
-```python
-from .tools.my_tool import my_tool_function
+#### Format-Specific Tools
+- **JSON RAG Search**: Searches within JSON data [5].
+- **CSV RAG Search**: Processes CSV file content [5].
+- **DOCX RAG Search**: Searches within Word documents [5].
+- **MDX RAG Search**: Handles MDX file content [5].
 
-def run():
-    # Example usage of the tool
-    input_data = "Sample data"
-    result = my_tool_function(input_data)
-    print(result)
-```
+### Development Tools
 
-## Tool Configuration
-Tools can be configured using the agent's configuration files. Add any necessary configuration options to `agent/config/` files.
+#### Code and Repository
+- **GithubSearchTool**: Performs semantic searches within GitHub repositories [2].
+- **Code Interpreter**: Executes and processes code [5].
+- **Code Docs RAG Search**: Searches through code documentation [5].
 
-### Example Configuration
-```yaml
-# config/tools.yaml
+### Database Tools
+- **MySQL RAG Search**: Searches within MySQL databases [5].
+- **PG RAG Search**: Processes PostgreSQL database content [5].
+- **NL2SQL Tool**: Converts natural language to SQL queries [5].
 
-my_tool:
-  option1: "value1"
-  option2: "value2"
-```
+## Citations
 
-## Advanced Tool Features
+[1] https://www.datacamp.com/tutorial/crew-ai  
+[2] https://github.com/0xZee/CrewAi-Tools  
+[3] https://www.insightpartners.com/ideas/crewai-launches-multi-agentic-platform-to-deliver-on-the-promise-of-generative-ai-for-enterprise/  
+[4] https://docs.crewai.com/introduction  
+[5] https://docs.crewai.com/tools/composiotool  
+[6] https://www.crewai.com/enterprise  
+[7] https://www.restack.io/p/crewai-answer-tools-list-overview-cat-ai  
+[8] https://github.com/crewAIInc/crewAI-examples  
+[9] https://www.crewai.com  
+[10] https://github.com/crewAIInc/crewAI-tools  
+[11] https://pypi.org/project/crewai/  
+[12] https://www.crewai.com/ecosystem  
+[13] https://www.youtube.com/watch?v=XrdPxV12QcE  
+[14] https://www.crewai.com/templates  
+[15] https://www.reddit.com/r/crewai/comments/1hzcpi1/ai_agents_and_tools/  
+[16] https://venturebeat.com/ai/crewai-launches-its-first-multi-agent-builder-speeding-the-way-to-agentic-ai/  
+[17] https://www.reddit.com/r/crewai/comments/1cjkc5s/can_some_please_post_a_super_simple_example_of_a/  
+[18] https://www.ibm.com/think/topics/crew-ai  
+[19] https://www.youtube.com/watch?v=VAeQWMaPJk8  
 
-### Tool Dependencies
-If your tool requires additional Python packages, add them to the `install_requires` section of `setup.py`:
-
-```python
-install_requires=[
-    "crewai[local]>=0.1.0",
-    "langchain>=0.1.0",
-    "python-dotenv>=1.0.0",
-    "pyyaml>=6.0.0",
-    "httpx>=0.24.0",
-    "new_dependency>=1.0.0"
-]
-```
-
-### Tool Testing
-Test your tool independently before integrating it with the agent. Create a separate test script or use a testing framework like `unittest` or `pytest`.
-
-### Tool Documentation
-Document your tool's functionality and usage within the tool's Python file. Use docstrings to describe the tool's purpose, parameters, and return values.
-
-## Example: Custom Tool Implementation
-
-### Step 1: Create the Tool
-```python
-# custom_tool.py
-
-def analyze_data(data):
-    """
-    Analyze the provided data and return insights.
-    """
-    insights = f"Insights for {data}"
-    return insights
-```
-
-### Step 2: Integrate the Tool
-```python
-# main.py
-
-from .tools.custom_tool import analyze_data
-
-def run():
-    data = "Market trends"
-    insights = analyze_data(data)
-    print(insights)
-```
-
-### Step 3: Configure the Tool
-```yaml
-# config/tools.yaml
-
-analyze_data:
-  analysis_depth: "deep"
-  report_format: "detailed"
-```
-
-## Best Practices
-
-1. **Modularity**: Keep tools focused on a single responsibility.
-2. **Reusability**: Design tools to be reusable across different parts of the agent.
-3. **Documentation**: Clearly document tool functionality and usage.
-4. **Testing**: Thoroughly test tools before integration.
-5. **Version Control**: Track tool changes in version control.
-
-## Conclusion
-Tools are a powerful way to extend the Hello World Agent's capabilities. By following this guide, you can create custom tools that enhance the agent's functionality and provide additional value to users.
+This document is continuously updated as new tools are integrated into CrewAI.
