@@ -4,9 +4,42 @@ A powerful, extensible agent framework leveraging ReACT methodology for autonomo
 
 ## 🚀 Quick Start
 
-```bash
-pip install hello_agent
-```
+1. **Install the package:**
+
+   ```bash
+   pip install hello_agent
+   ```
+
+2. **Set up your environment variables:**
+
+   Create a `.env` file in the root directory of your project and add the following:
+
+   ```env
+   # OpenRouter API Key
+   # Get your API key from https://openrouter.ai/
+   OPENROUTER_API_KEY=your_api_key_here
+
+   # Optional: LLM Model Settings
+   # Default models are set in agents.yaml, but can be overridden here
+   # RESEARCHER_MODEL=anthropic/claude-2
+   # EXECUTOR_MODEL=anthropic/claude-2
+   # ANALYZER_MODEL=anthropic/claude-2
+
+   # Optional: Debug Mode
+   # Set to true to enable additional logging
+   # DEBUG=false
+
+   # Optional: HITL Settings
+   # Enable/disable human-in-the-loop by default
+   # Can be overridden with --hitl flag
+   # HITL_ENABLED=false
+   ```
+
+3. **Run the agent:**
+
+   ```bash
+   python agent/main.py
+   ```
 
 ## 🎯 Key Features
 
