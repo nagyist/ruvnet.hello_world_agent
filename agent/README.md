@@ -15,9 +15,16 @@ pip install hello_agent
 
 ## Installation
 
-1. Install the package:
+1. Install via pip:
    ```bash
    pip install hello_agent
+   ```
+
+   Or install from source:
+   ```bash
+   git clone https://github.com/ruvnet/hello_world_agent.git
+   cd hello_world_agent
+   pip install -e .
    ```
 
 2. Add your OpenRouter API key to the `.env` file:
@@ -27,19 +34,14 @@ pip install hello_agent
 
 ## Usage
 
-The agent can be run in two ways:
-
-1. Using the command-line tool:
+1. Start the agent using the command-line tool:
    ```bash
    agent --prompt "What is quantum computing?" --task research
    ```
 
-2. Using Python code:
-   ```python
-   from agent.crew import HelloWorldCrew
-   
-   crew = HelloWorldCrew()
-   result = crew.run(prompt="What is quantum computing?", task_type="research")
+   Or run from source:
+   ```bash
+   ./start.sh --prompt "What is quantum computing?" --task research
    ```
 
 ### Command Line Arguments
@@ -61,28 +63,11 @@ agent --prompt "What is quantum computing?" --task research --hitl
 - Performance Analysis
 - Progress Tracking
 - Streaming Responses
-- Optional Human-in-the-Loop Mode
-
-## Documentation
-
-For detailed documentation and user guides, refer to:
-
-- [User Guide](agent/docs/readme.md)
-- [Templates Guide](agent/docs/templates.md)
-- [Tools Guide](agent/docs/tools.md)
-- [Configuration Guide](agent/docs/configuration.md)
-- [Advanced Implementations Guide](agent/docs/advanced_implementations.md)
-- [Memory and Storage Guide](agent/docs/memory_and_storage.md)
-- [Human-in-the-Loop Guide](agent/docs/human_in_the_loop.md)
-
-## Examples
-
-Explore the [Examples](agent/examples/README.md) directory for sample usage scenarios and human-in-the-loop implementations.
 
 ## Project Structure
 
 ```
-hello_world/
+agent/
 ├── config/              # Configuration files
 │   ├── agents.yaml     # Agent definitions
 │   ├── tasks.yaml      # Task definitions
@@ -92,17 +77,25 @@ hello_world/
 └── examples/           # Example implementations
 ```
 
-## Contributing
+## Documentation
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+For detailed documentation and user guides, refer to:
+
+- [User Guide](docs/readme.md)
+- [Templates Guide](docs/templates.md)
+- [Tools Guide](docs/tools.md)
+- [Configuration Guide](docs/configuration.md)
+- [Advanced Implementations Guide](docs/advanced_implementations.md)
+- [Memory and Storage Guide](docs/memory_and_storage.md)
+- [Human-in-the-Loop Guide](docs/human_in_the_loop.md)
+
+## Examples
+
+Explore the [Examples](examples/README.md) directory for sample usage scenarios and human-in-the-loop implementations.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
 
 ## Acknowledgments
 
