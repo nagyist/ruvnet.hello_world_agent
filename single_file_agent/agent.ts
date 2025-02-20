@@ -8,7 +8,7 @@
  * ## Setup
  * - Ensure you have a Deno runtime available (e.g., in your serverless environment).
  * - Set the environment variable `OPENROUTER_API_KEY` with your OpenRouter API key.
- * - (Optional) Set `OPENROUTER_MODEL` to specify the model (default is "openai/gpt-3.5-turbo").
+ * - (Optional) Set `OPENROUTER_MODEL` to specify the model (default is "openai/o3-mini-high").
  * - This script requires network access to call the OpenRouter API. When running with Deno, use `--allow-net` (and `--allow-env` to read env variables).
  * 
  * ## Deployment (Fly.io)
@@ -36,9 +36,10 @@
  * - This template is optimized for clarity and minimal dependencies. It avoids large libraries for faster cold starts.
  */
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+import { StateGraph, END } from "npm:@langchain/langgraph@0.0.5";
 
 const API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-const MODEL   = Deno.env.get("OPENROUTER_MODEL") || "openai/gpt-3.5-turbo";
+const MODEL   = Deno.env.get("OPENROUTER_MODEL") || "openai/o3-mini-high";
 // Ensure API key is provided
 if (!API_KEY) {
   console.error("Error: OPENROUTER_API_KEY is not set in environment.");
