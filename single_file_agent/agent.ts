@@ -36,6 +36,7 @@
  * - This template is optimized for clarity and minimal dependencies. It avoids large libraries for faster cold starts.
  */
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+import { StateGraph, END } from "npm:@langchain/langgraph@0.0.5";
 
 const API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 const MODEL   = Deno.env.get("OPENROUTER_MODEL") || "openai/o3-mini-high";
