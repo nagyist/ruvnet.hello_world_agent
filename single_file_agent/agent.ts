@@ -30,42 +30,30 @@
  * The response will be a JSON object: `{ "answer": "the answer from the agent" }`.
  * 
  * ## Notes
- * - The agent uses LangGraph for workflow management and the ReACT pattern for reasoning.
+ * - The agent uses a ReACT loop: it will reason and decide on actions (tool uses) before giving the final answer.
  * - Tools are defined in the code (see the `tools` array). The model is instructed on how to use them.
  * - The OpenRouter API is used similarly to OpenAI's Chat Completion API. Make sure your model supports the desired functionality.
  * - This template is optimized for clarity and minimal dependencies. It avoids large libraries for faster cold starts.
- * - The workflow is structured using LangGraph's StateGraph for better state management and control flow.
  */
-
-// Import dependencies
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
-import { StateGraph, END } from "npm:@langchain/langgraph@0.1.1";
 
 const API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-const MODEL = Deno.env.get("OPENROUTER_MODEL") || "openai/o3-mini-high";
-
+const MODEL   = Deno.env.get("OPENROUTER_MODEL") || "openai/o3-mini-high";
+// Ensure API key is provided
 if (!API_KEY) {
   console.error("Error: OPENROUTER_API_KEY is not set in environment.");
   Deno.exit(1);
 }
 
-// Type definitions
+// Define the structure for a chat message and tool
 interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
-
 interface Tool {
   name: string;
   description: string;
   run: (input: string) => Promise<string> | string;
-}
-
-interface AgentState {
-  messages: ChatMessage[];
-  tools: Tool[];
-  current_step: number;
-  final_answer?: string;
 }
 
 // Define available tools
@@ -74,10 +62,13 @@ const tools: Tool[] = [
     name: "Calculator",
     description: "Performs arithmetic calculations. Usage: Calculator[expression]",
     run: (input: string) => {
+      // Simple safe evaluation for arithmetic expressions
       try {
+        // Allow only numbers and basic math symbols in input for safety
         if (!/^[0-9.+\-*\/()\s]+$/.test(input)) {
           return "Invalid expression";
         }
+        // Evaluate the expression
         const result = Function("return (" + input + ")")();
         return String(result);
       } catch (err) {
@@ -93,7 +84,7 @@ const tools: Tool[] = [
   // }
 ];
 
-// System prompt
+// Create a system prompt that instructs the model on how to use tools and follow ReACT format
 const toolDescriptions = tools.map(t => `${t.name}: ${t.description}`).join("\n");
 const systemPrompt = 
 `You are a smart assistant with access to the following tools:
@@ -112,7 +103,6 @@ Only provide one action at a time, and wait for the observation before continuin
 If the answer is directly known or once you have gathered enough information, output the final Answer.
 `;
 
-// OpenRouter API call function
 async function callOpenRouter(messages: ChatMessage[]): Promise<string> {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -123,141 +113,88 @@ async function callOpenRouter(messages: ChatMessage[]): Promise<string> {
     body: JSON.stringify({
       model: MODEL,
       messages: messages,
-      stop: ["Observation:"],
+      stop: ["Observation:"],  // Stop generation before the model writes an observation
       temperature: 0.0
     })
   });
-  
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`OpenRouter API error: HTTP ${response.status} - ${errorText}`);
   }
-  
   const data = await response.json();
   const content: string | undefined = data.choices?.[0]?.message?.content;
-  
   if (typeof content !== "string") {
     throw new Error("Invalid response from LLM (no content)");
   }
-  
   return content;
 }
 
-// LangGraph workflow setup
-const workflow = new StateGraph<AgentState>({
-  channels: {
-    state: "object",
-    query: "string",
-    final_answer: "string?"
-  }
-});
+/**
+ * Runs the ReACT agent loop for a given user query.
+ * @param query - The user's question or command for the agent.
+ * @returns The final answer from the agent.
+ */
+async function runAgent(query: string): Promise<string> {
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: query }
+  ];
 
-// Node: Parse input and decide next action
-workflow.addNode("parse_input", async (state: AgentState) => {
-  const reply = await callOpenRouter(state.messages);
-  return {
-    ...state,
-    messages: [...state.messages, { role: "assistant", content: reply }]
-  };
-});
-
-// Node: Execute tool if needed
-workflow.addNode("tool_executor", async (state: AgentState) => {
-  const lastMessage = state.messages[state.messages.length - 1];
-  const actionMatch = lastMessage.content.match(/Action:\s*([^\[]+)\[([^\]]+)\]/);
-  
-  if (!actionMatch) {
-    return state;
-  }
-  
-  const [_, toolName, toolInput] = actionMatch;
-  const tool = state.tools.find(t => t.name.toLowerCase() === toolName.trim().toLowerCase());
-  let observation: string;
-  
-  if (!tool) {
-    observation = `Tool "${toolName}" not found`;
-  } else {
-    try {
-      const result = await tool.run(toolInput.trim());
-      observation = String(result);
-    } catch (err) {
-      observation = `Error: ${(err as Error).message}`;
+  // The agent will iterate, allowing up to 10 reasoning loops (to avoid infinite loops).
+  for (let step = 0; step < 10; step++) {
+    // Call the LLM via OpenRouter
+    const assistantReply = await callOpenRouter(messages);
+    // Append the assistant's reply to the message history
+    messages.push({ role: "assistant", content: assistantReply });
+    // Check if the assistant's reply contains a final answer
+    const answerMatch = assistantReply.match(/Answer:\s*(.*)$/);
+    if (answerMatch) {
+      // Return the text after "Answer:" as the final answer
+      return answerMatch[1].trim();
     }
+    // Otherwise, look for an action to perform
+    const actionMatch = assistantReply.match(/Action:\s*([^\[]+)\[([^\]]+)\]/);
+    if (actionMatch) {
+      const toolName = actionMatch[1].trim();
+      const toolInput = actionMatch[2].trim();
+      // Find the tool by name (case-insensitive match)
+      const tool = tools.find(t => t.name.toLowerCase() === toolName.toLowerCase());
+      let observation: string;
+      if (!tool) {
+        observation = `Tool "${toolName}" not found`;
+      } else {
+        try {
+          const result = await tool.run(toolInput);
+          observation = String(result);
+        } catch (err) {
+          observation = `Error: ${(err as Error).message}`;
+        }
+      }
+      // Append the observation as a system message for the next LLM call
+      messages.push({ role: "system", content: `Observation: ${observation}` });
+      // Continue loop for next reasoning step with the new observation in context
+      continue;
+    }
+    // If no Action or Answer was found in the assistant's reply, break to avoid an endless loop.
+    // (This could happen if the model didn't follow the format. In such case, treat the whole reply as answer.)
+    return assistantReply.trim();
   }
-  
-  return {
-    ...state,
-    messages: [...state.messages, { role: "system", content: `Observation: ${observation}` }]
-  };
-});
+  throw new Error("Agent did not produce a final answer within the step limit.");
+}
 
-// Node: Generate response or continue
-workflow.addNode("response_generator", async (state: AgentState) => {
-  const lastMessage = state.messages[state.messages.length - 1];
-  const answerMatch = lastMessage.content.match(/Answer:\s*(.*)$/);
-  
-  if (answerMatch) {
-    return {
-      ...state,
-      final_answer: answerMatch[1].trim()
-    };
-  }
-  
-  return {
-    ...state,
-    current_step: state.current_step + 1
-  };
-});
-
-// Add edges between nodes
-workflow.addEdge("parse_input", "tool_executor");
-workflow.addEdge("tool_executor", "response_generator");
-
-// Add conditional edges for loop or completion
-workflow.addConditionalEdges(
-  "response_generator",
-  (state) => {
-    if (state.final_answer) return "end";
-    if (state.current_step >= 10) return "end";
-    return "continue";
-  },
-  {
-    end: END,
-    continue: "parse_input"
-  }
-);
-
-// Compile the workflow
-const graph = workflow.compile();
-
-// Cyberpunk ASCII banner
-console.log(`
-\x1b[36m   ____  _____ _                     _   
-  / ___||  ___/ \\   __ _  ___ _ __ | |_ 
-  \\___ \\| |_ / _ \\ / _\` |/ _ \\ '_ \\| __|
-   ___) |  _/ ___ \\ (_| |  __/ | | | |_ 
-  |____/|_|/_/   \\_\\__, |\\___|_| |_|\\__|
-                   |___/
-    [NEURAL LINK ESTABLISHED]
-    [AWAITING INTERFACE INPUT...]
-\x1b[0m
-`);
-
-// HTTP server
+// Start an HTTP server (for serverless usage) that listens for POST requests with a JSON query.
 serve(async (req: Request) => {
   if (req.method === "GET") {
     return new Response(JSON.stringify({
-      message: "Welcome to the Single File ReAct Agent with LangGraph!",
+      message: "Welcome to the Single File ReAct Agent!",
       usage: "Send a POST request with JSON body: { \"query\": \"your question\" }"
     }), {
       headers: { "Content-Type": "application/json" }
     });
   }
-
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
   }
-
   let query: string;
   try {
     const data = await req.json();
@@ -265,25 +202,12 @@ serve(async (req: Request) => {
   } catch {
     return new Response("Invalid JSON body", { status: 400 });
   }
-
   if (!query || typeof query !== "string") {
     return new Response(`Bad Request: Missing "query" string.`, { status: 400 });
   }
-
   try {
-    const result = await graph.invoke({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: query }
-      ],
-      tools,
-      current_step: 0
-    });
-
-    const responseData = { 
-      answer: result.final_answer ?? "No answer generated within step limit." 
-    };
-
+    const answer = await runAgent(query);
+    const responseData = { answer };
     return new Response(JSON.stringify(responseData), {
       headers: { "Content-Type": "application/json" }
     });
