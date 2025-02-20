@@ -230,6 +230,19 @@ workflow.addConditionalEdges(
 // Compile the workflow
 const graph = workflow.compile();
 
+// Cyberpunk ASCII banner
+console.log(`
+\x1b[36m   ____  _____ _                     _   
+  / ___||  ___/ \\   __ _  ___ _ __ | |_ 
+  \\___ \\| |_ / _ \\ / _\` |/ _ \\ '_ \\| __|
+   ___) |  _/ ___ \\ (_| |  __/ | | | |_ 
+  |____/|_|/_/   \\_\\__, |\\___|_| |_|\\__|
+                   |___/
+    [NEURAL LINK ESTABLISHED]
+    [AWAITING INTERFACE INPUT...]
+\x1b[0m
+`);
+
 // HTTP server
 serve(async (req: Request) => {
   if (req.method === "GET") {
