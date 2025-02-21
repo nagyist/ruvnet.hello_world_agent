@@ -152,13 +152,77 @@ curl "http://localhost:8000?input=What+is+2+%2B+2%3F"
 
 ## Deployment
 
-The generated agent is optimized for various deployment scenarios:
+The meta-agent and generated agents support multiple deployment scenarios:
+
+### Meta-Agent Server Mode
+
+Run the meta-agent as an HTTP server to create agents via REST API:
+
+```sh
+# Start meta-agent server with custom port (default: 8000)
+deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
+  --server=true \
+  --port=3000
+
+# Create agent via POST request
+curl -X POST http://localhost:3000 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentName": "TestAgent",
+    "model": "openai/gpt-4",
+    "deployment": "http",
+    "enableReflection": true,
+    "tools": [...],
+    "systemPrompt": "...",
+    "npmPackages": ["mathjs"],
+    "advancedArgs": {
+      "logLevel": "debug",
+      "memoryLimit": 256
+    }
+  }'
+
+# Response includes:
+{
+  "message": "Agent generated successfully",
+  "outputPath": "./generated_agent.ts",
+  "code": "... generated TypeScript code ..."
+}
+```
+
+### Generated Agent Deployment
+
+Generated agents can be deployed in various scenarios:
+
 - **Local CLI Execution:**  
   Quickly test and iterate on your agent using Deno's CLI.
+  ```sh
+  deno run --allow-net --allow-env --allow-run generated_agent.ts "What is 2+2?"
+  ```
+
 - **HTTP Server Deployment:**  
-  Deploy the agent as a serverless HTTP endpoint (compatible with Deno Deploy, Supabase Edge, Fly.io, etc.).
+  Deploy as an HTTP server with customizable options:
+  ```sh
+  # Start with custom host/port
+  deno run --allow-net --allow-env --allow-run generated_agent.ts \
+    --deployment=http \
+    --hostname=0.0.0.0 \
+    --port=3000 \
+    --cert=./cert.pem \
+    --key=./key.pem
+
+  # Available Deno server arguments:
+  # --port=<number>       Port to listen on (default: 8000)
+  # --hostname=<string>   Hostname to listen on (default: 0.0.0.0)
+  # --cert=<path>        Path to TLS certificate file
+  # --key=<path>         Path to TLS private key file
+  # --cors               Enable CORS headers
+  # --rateLimit=<number> Max requests per IP per minute
+  # --timeout=<number>   Request timeout in milliseconds
+  ```
+
 - **Edge & Serverless:**  
-  Leverage Deno's low cold start times and secure sandboxing to run the agent in global serverless environments.
+  Leverage Deno's low cold start times and secure sandboxing to run the agent in global serverless environments (compatible with Deno Deploy, Supabase Edge, Fly.io, etc.).
+
 - **Optional Multi-Agent Communication:**  
   Enable communication between agents by checking robots.txt of target agents.
 

@@ -62,9 +62,16 @@
  * ImportMeta interface for Deno's import.meta object
  * Provides metadata about the current module
  */
-declare interface ImportMeta {
+interface ImportMeta {
   main: boolean;  // True if this is the main module
   url: string;    // URL of the current module
+}
+
+declare global {
+  interface ImportMeta {
+    main: boolean;  // True if this is the main module
+    url: string;    // URL of the current module
+  }
 }
 
 /**
@@ -549,15 +556,125 @@ export default handler;
  * - Provides detailed error messages
  * - Ensures clean exit on failure
  */
-if (import.meta.main) {
+// ===================
+// META AGENT HTTP SERVER
+// ===================
+
+async function metaAgentHandler(req: Request): Promise<Response> {
+  if (req.method === "GET") {
+    // Return introduction in robots.txt format
+    return new Response(
+      `User-agent: *
+Allow: /
+Allow: /agents/
+Allow: /.well-known/
+Disallow: /internal/
+Disallow: /system/
+Disallow: /private/
+
+# Meta Agent Generator v1.0
+# Created by rUv
+# Last Updated: 2025-02-21
+#
+# Description:
+# Advanced TypeScript-based agent generator that creates autonomous
+# AI agents following the ReACT (Reasoning + Acting) methodology.
+#
+# Capabilities:
+#   - Generate ReACT agents via POST API
+#   - Built-in Tools:
+#     * Calculator: Arithmetic operations
+#     * DateTime: Time/date functions
+#     * AlgebraSolver: Linear equation solving
+#     * CodeExecutor: Sandboxed JS/TS execution
+#   - Deployment Options:
+#     * HTTP server mode
+#     * CLI local mode
+#   - Advanced Features:
+#     * Self-reflection and optimization
+#     * Multi-agent communication
+#     * Custom tool integration
+#     * NPM package support
+#     * Memory management
+#     * Streaming responses
+#
+# API Endpoints:
+# 1. GET / 
+#    Returns this robots.txt formatted introduction
+#
+# 2. POST /
+#    Creates new agent
+#    Required headers:
+#      Content-Type: application/json
+#    Request body schema:
+#      {
+#        "agentName": string,          // Agent identifier
+#        "model": string,              // OpenRouter model name
+#        "deployment": "http"|"local", // Deployment mode
+#        "systemPrompt": string,       // Custom instructions
+#        "tools": [{                   // Custom tool definitions
+#          "name": string,
+#          "description": string,
+#          "code": string
+#        }],
+#        "enableReflection": boolean,  // Self-optimization
+#        "outputFile": string,         // Output path
+#        "npmPackages": string[],      // Dependencies
+#        "advancedArgs": {             // Optional settings
+#          "logLevel": string,
+#          "memoryLimit": number
+#        },
+#        "enableMultiAgentComm": boolean
+#      }
+#    Example minimal body:
+#      {
+#        "agentName": "TestAgent",
+#        "model": "openai/o3-mini-high",
+#        "deployment": "http"
+#      }
+#
+# Security:
+#   - Sandboxed execution environment
+#   - Environment variable-based secrets
+#   - Input validation and sanitization
+#   - Controlled permissions model
+#
+# Performance:
+#   - Single-file architecture
+#   - Fast cold starts
+#   - Efficient tool implementations
+#   - Memory usage controls
+#
+# Documentation:
+# See README.md for complete usage details
+# GitHub: https://github.com/ruvnet/hello_world_agent
+#
+# Contact:
+# Author: rUv
+
+`,
+      { 
+        status: 200, 
+        headers: { "Content-Type": "text/plain" } 
+      }
+    );
+  }
+
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }), 
+      { status: 405, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const args = parseArgs();
+    const body = await req.json();
     
-    // Build configuration with defaults
+    // Build configuration with POST body params
     const config: AgentConfig = {
-      agentName: args.agentName || "HelloWorldAgent",
-      model: args.model || (Deno.env.get("OPENROUTER_MODEL") ?? "openai/o3-mini-high"),
-      systemPrompt: `You are an AI agent that follows the ReACT methodology.
+      agentName: body.agentName || "HelloWorldAgent",
+      model: body.model || (Deno.env.get("OPENROUTER_MODEL") ?? "openai/o3-mini-high"),
+      systemPrompt: body.systemPrompt || `You are an AI agent that follows the ReACT methodology.
 Available tools:
 {TOOL_LIST}
 
@@ -567,22 +684,86 @@ Action: <ToolName>|<input>
 Observation: <result>
 ...
 Final: <answer>`,
-      tools: defaultTools,
-      enableReflection: args.enableReflection !== "false",
-      deployment: args.deployment === "local" ? "local" : "http",
-      outputFile: args.outputFile || "./generated_agent.ts",
-      npmPackages: args.npmPackages?.split(","),
-      advancedArgs: args.advancedArgs ? JSON.parse(args.advancedArgs) : undefined,
-      enableMultiAgentComm: args.enableMultiAgentComm === "true"
+      tools: body.tools || defaultTools,
+      enableReflection: body.enableReflection !== false,
+      deployment: body.deployment === "local" ? "local" : "http",
+      outputFile: body.outputFile || "./generated_agent.ts",
+      npmPackages: body.npmPackages,
+      advancedArgs: body.advancedArgs,
+      enableMultiAgentComm: body.enableMultiAgentComm === true
     };
 
     // Generate and write the agent code
     const generatedCode = generateAgentCode(config);
-    await Deno.writeTextFile(config.outputFile, generatedCode);
-    console.log(`✨ Generated agent: ${config.outputFile}`);
+    const outputPath = config.outputFile;
+    await Deno.writeTextFile(outputPath, generatedCode);
+
+    // Return the generated code in the response
+    return new Response(
+      JSON.stringify({ 
+        message: "Agent generated successfully",
+        outputPath,
+        code: generatedCode 
+      }), 
+      { 
+        status: 200, 
+        headers: { "Content-Type": "application/json" } 
+      }
+    );
 
   } catch (error) {
-    console.error("Error generating agent:", error);
-    Deno.exit(1);
+    return new Response(
+      JSON.stringify({ error: String(error) }), 
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// ===================
+// ENTRY POINT
+// ===================
+
+if (import.meta.main) {
+  const args = parseArgs();
+  
+  if (args.server === "true") {
+    // Run as HTTP server
+    const port = Number(args.port) || 8000;
+    console.log(`🤖 Meta-agent server running on http://localhost:${port}/`);
+    await Deno.serve({ port }, metaAgentHandler);
+  } else {
+    try {
+      // Run in CLI mode
+      const config: AgentConfig = {
+        agentName: args.agentName || "HelloWorldAgent",
+        model: args.model || (Deno.env.get("OPENROUTER_MODEL") ?? "openai/o3-mini-high"),
+        systemPrompt: `You are an AI agent that follows the ReACT methodology.
+Available tools:
+{TOOL_LIST}
+
+Follow this format:
+Thought: <reasoning>
+Action: <ToolName>|<input>
+Observation: <result>
+...
+Final: <answer>`,
+        tools: defaultTools,
+        enableReflection: args.enableReflection !== "false",
+        deployment: args.deployment === "local" ? "local" : "http",
+        outputFile: args.outputFile || "./generated_agent.ts",
+        npmPackages: args.npmPackages?.split(","),
+        advancedArgs: args.advancedArgs ? JSON.parse(args.advancedArgs) : undefined,
+        enableMultiAgentComm: args.enableMultiAgentComm === "true"
+      };
+
+      // Generate and write the agent code
+      const generatedCode = generateAgentCode(config);
+      await Deno.writeTextFile(config.outputFile, generatedCode);
+      console.log(`✨ Generated agent: ${config.outputFile}`);
+
+    } catch (error) {
+      console.error("Error generating agent:", error);
+      Deno.exit(1);
+    }
   }
 }
