@@ -34,21 +34,6 @@ A **Meta Agent** is an agent that creates agents. This generator automates the c
 - **Optional NPM Package Integration:**  
   Import and integrate npm packages via Deno's npm support by providing a comma-separated list of packages.
 
-- **Advanced Command-Line Arguments:**  
-  Override defaults using Deno CLI arguments:
-  ```sh
-  # Example with all options
-  deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
-    --agentName="CalculatorAgent" \
-    --model="openai/gpt-4" \
-    --deployment=local \
-    --outputFile="./calculator_agent.ts" \
-    --enableReflection=true \
-    --enableMultiAgentComm=false \
-    --npmPackages="mathjs,moment" \
-    --advancedArgs='{"logLevel":"debug","memoryLimit":256}'
-  ```
-
 - **Multi-Agent Communication Controls:**  
   Optionally check a target agent's robots.txt to control inter-agent communication.
 
@@ -58,52 +43,197 @@ A **Meta Agent** is an agent that creates agents. This generator automates the c
 - **Self–Reflection:**  
   An optional reflection step reviews the chain-of-thought and final answer, allowing the agent to catch and correct errors.
 
-## Example Usage
+## Command-Line Arguments
 
-### 1. Basic Arithmetic
+The meta-agent supports extensive configuration through command-line arguments. Here's a comprehensive guide to all available options:
+
+### Quick Start Examples
+
 ```sh
-# Generate an agent
-deno run --allow-net --allow-env --allow-run --allow-write agent.ts --agentName="MathAgent"
-
-# Use the generated agent
-deno run --allow-net --allow-env --allow-run math_agent.ts "What is 2 + 2?"
-# Output:
-# Thought: I will use the Calculator tool to calculate 2 + 2.
-# Answer: The answer is 4.
-```
-
-### 2. Multi-Tool Tasks
-```sh
-# Complex query using multiple tools
-deno run --allow-net --allow-env --allow-run math_agent.ts "What is the current time, and what is x in the equation: 3*x = 15?"
-# Output:
-# Thought: I need to obtain the current time using the DateTime tool and then solve the equation 3*x = 15 using the AlgebraSolver tool.
-# Answer: The current time is 2025-02-21T04:23:27.000Z and the value of x in the equation 3*x = 15 is 5.
-```
-
-### 3. Code Execution
-```sh
-# Execute JavaScript code
-deno run --allow-net --allow-env --allow-run math_agent.ts "Execute this code: function factorial(n) { return n <= 1 ? 1 : n * factorial(n-1); }; console.log(factorial(5));"
-# Output:
-# Thought: We need to execute the given JavaScript factorial function code and check its output.
-# Answer: The code outputs 120.
-```
-
-### 4. HTTP Server Mode
-```sh
-# Generate HTTP server agent
+# Basic usage - Create a local CLI agent
 deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
-  --agentName="APIAgent" \
+  --agentName="MathBot"
+
+# Full configuration - Create an HTTP server agent
+deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
+  --agentName="CalculatorAgent" \
+  --model="openai/gpt-4" \
   --deployment=http \
-  --outputFile="./api_agent.ts"
+  --port=3000 \
+  --hostname="localhost" \
+  --outputFile="./agents/calculator_agent.ts" \
+  --enableReflection=true \
+  --enableMultiAgentComm=true \
+  --npmPackages="mathjs,moment" \
+  --advancedArgs='{"logLevel":"debug","memoryLimit":256,"timeout":30000}'
+```
 
-# Run the server
-deno run --allow-net --allow-env --allow-run api_agent.ts
+### Required Deno Permissions
 
-# Test with curl
-curl "http://localhost:8000?input=What+is+2+%2B+2%3F"
-# Output: {"answer": "The answer is 4."}
+| Permission | Description | Usage |
+|------------|-------------|-------|
+| `--allow-net` | Network access | API calls, HTTP server |
+| `--allow-env` | Environment variables | API keys, configuration |
+| `--allow-run` | Execute commands | CodeExecutor tool |
+| `--allow-write` | File system writes | Generate agent files |
+
+### Core Arguments
+
+#### Agent Identity
+```sh
+--agentName=<string>       # Agent identifier (default: "HelloWorldAgent")
+                          # Used in file naming and agent identification
+                          # Example: --agentName="MathBot"
+
+--model=<string>          # OpenRouter model (default: "openai/o3-mini-high")
+                          # Supported: gpt-4, claude-2, llama-2, etc.
+                          # Example: --model="openai/gpt-4"
+```
+
+#### Deployment Configuration
+```sh
+--deployment=<mode>       # Deployment mode (default: "local")
+                          # Options:
+                          #   local: Run as CLI tool
+                          #   http: Run as HTTP server
+                          # Example: --deployment=http
+
+--outputFile=<path>       # Generated file path (default: "./generated_agent.ts")
+                          # Supports relative/absolute paths
+                          # Example: --outputFile="./agents/math_bot.ts"
+```
+
+### Feature Controls
+
+#### Agent Capabilities
+```sh
+--enableReflection=<bool> # Enable self-optimization (default: true)
+                          # Adds post-response reflection step
+                          # Helps catch and correct errors
+                          # Example: --enableReflection=true
+
+--enableMultiAgentComm=<bool> # Multi-agent support (default: false)
+                              # Implements robots.txt protocol
+                              # Enables agent discovery
+                              # Example: --enableMultiAgentComm=true
+```
+
+#### External Dependencies
+```sh
+--npmPackages=<string>    # Comma-separated npm packages
+                          # Auto-imports via Deno's npm support
+                          # Example: --npmPackages="mathjs,moment,lodash"
+```
+
+### Advanced Configuration
+
+#### Performance Tuning
+```sh
+--advancedArgs=<json>     # Fine-tuning options as JSON
+{
+  "logLevel": "debug",     // Logging level (debug|info|warn|error)
+  "memoryLimit": 256,      // Memory cap in MB
+  "timeout": 30000,        // Request timeout (ms)
+  "maxIterations": 10,     // Max reasoning steps
+  "temperature": 0.7,      // Model temperature
+  "streamResponse": true,  // Enable streaming
+  "retryAttempts": 3,     // API retry count
+  "cacheSize": 1000,      // Response cache size
+  "contextWindow": 4096,   // Token context window
+  "batchSize": 32         // Batch processing size
+}
+```
+
+### HTTP Server Options
+
+When using `--deployment=http`, additional options are available:
+
+#### Server Configuration
+```sh
+--port=<number>          # Server port (default: 8000)
+                         # Example: --port=3000
+
+--hostname=<string>      # Server hostname (default: "0.0.0.0")
+                         # Example: --hostname="localhost"
+```
+
+#### Security & Performance
+```sh
+--cors=<boolean>         # Enable CORS headers
+                         # Example: --cors=true
+
+--rateLimit=<number>     # Max requests per IP/minute
+                         # Example: --rateLimit=60
+
+--timeout=<number>       # Request timeout (ms)
+                         # Example: --timeout=30000
+```
+
+#### TLS/SSL Support
+```sh
+--cert=<path>           # TLS certificate file
+                         # Example: --cert=./cert.pem
+
+--key=<path>            # TLS private key file
+                         # Example: --key=./key.pem
+```
+
+### Environment Variables
+
+The following environment variables can be used to override defaults:
+
+```sh
+OPENROUTER_API_KEY      # Required: OpenRouter API key
+OPENROUTER_MODEL        # Optional: Default model
+PORT                    # Optional: Server port
+HOST                    # Optional: Server hostname
+LOG_LEVEL              # Optional: Logging verbosity
+MEMORY_LIMIT           # Optional: Memory cap (MB)
+```
+
+### Examples
+
+1. **Basic Local Agent**
+```sh
+deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
+  --agentName="MathBot"
+```
+
+2. **Advanced HTTP Server**
+```sh
+deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
+  --deployment=http \
+  --port=3000 \
+  --hostname="localhost" \
+  --cors=true \
+  --rateLimit=60 \
+  --cert=./cert.pem \
+  --key=./key.pem \
+  --advancedArgs='{"logLevel":"debug","timeout":30000}'
+```
+
+3. **Full-Featured Agent**
+```sh
+deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
+  --agentName="SuperBot" \
+  --model="openai/gpt-4" \
+  --deployment=http \
+  --outputFile="./agents/super_bot.ts" \
+  --enableReflection=true \
+  --enableMultiAgentComm=true \
+  --npmPackages="mathjs,moment,lodash" \
+  --advancedArgs='{
+    "logLevel": "debug",
+    "memoryLimit": 512,
+    "timeout": 30000,
+    "maxIterations": 15,
+    "temperature": 0.8,
+    "streamResponse": true,
+    "retryAttempts": 3,
+    "cacheSize": 2000,
+    "contextWindow": 8192,
+    "batchSize": 64
+  }'
 ```
 
 ## Tool Specifications
