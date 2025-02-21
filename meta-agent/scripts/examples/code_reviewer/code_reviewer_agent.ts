@@ -1,7 +1,11 @@
 
-// Generated Agent: FederationAgent
+// Generated Agent: CodeReviewerAgent
 // Model: openai/gpt-4
-// Generated: 2025-02-21T15:49:16.419Z
+// Generated: 2025-02-21T16:34:17.104Z
+
+import eslint from "eslint";
+import prettier from "prettier";
+import typescript from "typescript";
 
 
 // ===================
@@ -150,8 +154,7 @@ async function callOpenRouter(messages: Array<{ role: string; content: string }>
 
 async function runAgent(userInput: string): Promise<string> {
   const messages = [
-    { role: "system", content: `You are a Federation Agent that coordinates with other agents using robots.txt protocol. You can discover and communicate with other agents while respecting their access controls.
-
+    { role: "system", content: `You are an AI agent that follows the ReACT methodology.
 Available tools:
 Calculator: Performs arithmetic calculations. Usage: Calculator|<expression>
 DateTime: Returns current time in ISO format. Usage: DateTime|
