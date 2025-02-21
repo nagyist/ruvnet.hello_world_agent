@@ -577,26 +577,36 @@ Disallow: /private/
 # Last Updated: 2025-02-21
 #
 # Description:
-# Advanced TypeScript-based agent generator that creates autonomous
-# AI agents following the ReACT (Reasoning + Acting) methodology.
-#
-# Capabilities:
-#   - Generate ReACT agents via POST API
-#   - Built-in Tools:
-#     * Calculator: Arithmetic operations
-#     * DateTime: Time/date functions
-#     * AlgebraSolver: Linear equation solving
-#     * CodeExecutor: Sandboxed JS/TS execution
-#   - Deployment Options:
-#     * HTTP server mode
-#     * CLI local mode
-#   - Advanced Features:
-#     * Self-reflection and optimization
-#     * Multi-agent communication
-#     * Custom tool integration
-#     * NPM package support
-#     * Memory management
-#     * Streaming responses
+// ===================
+ * Advanced Meta-Agent Generator Script for Deno (TypeScript)
+ * Created by rUv
+ * 
+ * This script generates autonomous AI agents that follow the ReACT (Reasoning + Acting) methodology.
+ * Each generated agent is a self-contained TypeScript file that can:
+ * 1. Process natural language inputs
+ * 2. Execute specialized tools (Calculator, DateTime, AlgebraSolver, CodeExecutor)
+ * 3. Perform self-reflection and optimization
+ * 4. Deploy as either a CLI tool or HTTP server
+ * 
+ * Key Features:
+ * - Dynamic tool integration with custom implementations
+ * - Secure sandboxed execution environment
+ * - Flexible deployment options (CLI/HTTP)
+ * - Optional multi-agent communication via robots.txt
+ * - Built-in self-reflection and optimization
+ * 
+ * Security Features:
+ * - Sandboxed code execution
+ * - Environment variable-based secrets
+ * - Input validation and sanitization
+ * - Controlled permissions model
+ * 
+ * Performance Optimizations:
+ * - Single-file architecture for fast cold starts
+ * - Efficient tool implementations
+ * - Streaming response support
+ * - Memory usage controls
+ // ===================
 #
 # API Endpoints:
 # 1. GET / 
