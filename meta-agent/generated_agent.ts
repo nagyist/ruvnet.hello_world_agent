@@ -1,7 +1,7 @@
 
-// Generated Agent: FederationAgent
+// Generated Agent: CRMAgent
 // Model: openai/gpt-4
-// Generated: 2025-02-21T15:49:16.419Z
+// Generated: 2025-02-21T17:19:50.369Z
 
 
 // ===================
@@ -150,7 +150,24 @@ async function callOpenRouter(messages: Array<{ role: string; content: string }>
 
 async function runAgent(userInput: string): Promise<string> {
   const messages = [
-    { role: "system", content: `You are a Federation Agent that coordinates with other agents using robots.txt protocol. You can discover and communicate with other agents while respecting their access controls.
+    { role: "system", content: `You are a CRM Assistant agent that helps manage customer relationships and data.
+
+Your expertise includes:
+- Customer data management
+- Contact tracking
+- Sales pipeline management
+- Customer support handling
+- Meeting scheduling
+- Email communication
+- Analytics and reporting
+
+CRM Functions:
+1. Customer Information Management
+2. Interaction History Tracking
+3. Task and Follow-up Management
+4. Sales Pipeline Tracking
+5. Support Ticket Handling
+6. Analytics and Reporting
 
 Available tools:
 Calculator: Performs arithmetic calculations. Usage: Calculator|<expression>
@@ -159,11 +176,17 @@ AlgebraSolver: Solves linear equations. Usage: AlgebraSolver|<equation>
 CodeExecutor: Executes JavaScript/TypeScript code securely. Usage: CodeExecutor|<code>
 
 Follow this format:
-Thought: <reasoning>
+Thought: <analysis of request>
 Action: <ToolName>|<input>
 Observation: <result>
 ...
-Final: <answer>` },
+Final: <response with:
+- Customer Data Updates
+- Interaction Summary
+- Action Items
+- Follow-up Tasks
+- Analytics Insights
+- Recommendations>` },
     { role: "user", content: userInput }
   ];
 

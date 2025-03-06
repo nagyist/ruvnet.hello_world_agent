@@ -353,6 +353,30 @@ Generated agents can be deployed in various scenarios:
 - **Edge & Serverless:**  
   Leverage Deno's low cold start times and secure sandboxing to run the agent in global serverless environments (compatible with Deno Deploy, Supabase Edge, Fly.io, etc.).
 
+- **Discord Bot Integration:**  
+  Deploy the agent as a Discord bot using Supabase Edge Functions:
+  ```sh
+  # 1. Create a Supabase Edge Function
+  supabase functions new discord-agent-bot
+  
+  # 2. Copy the agent code to the function
+  cp generated_agent.ts .supabase/functions/discord-agent-bot/index.ts
+  
+  # 3. Modify the HTTP handler to handle Discord interactions
+  # (See discord_bot/plans/discord_bot_deployment_plan.md for details)
+  
+  # 4. Set the OpenRouter API key
+  supabase secrets set OPENROUTER_API_KEY=your_key
+  
+  # 5. Deploy the function
+  supabase functions deploy discord-agent-bot --no-verify-jwt
+  
+  # 6. Configure your Discord bot in the Discord Developer Portal
+  # - Set the Interactions Endpoint URL to your Supabase function URL
+  # - Create slash commands for your bot
+  # - Invite the bot to your server
+  ```
+  
 - **Optional Multi-Agent Communication:**  
   Enable communication between agents by checking robots.txt of target agents.
 
@@ -385,6 +409,51 @@ The agent includes comprehensive error handling:
 
 The Meta Agent Generator empowers developers to create custom, flexible, and secure AI agents without extensive manual coding. By simply adjusting configuration options and using command-line arguments, you can generate an agent that meets your domain-specific requirements and deployment environment. Enjoy building and deploying your own autonomous agents with this next-generation tool – created by rUv.
 
+
+---
+
+## Discord Bot Integration
+
+The Meta Agent Generator can be used to create agents that are deployed as Discord bots using Supabase Edge Functions. This integration allows users to interact with your agent directly through Discord's slash commands.
+
+### Discord Bot Deployment Process
+
+1. **Generate the Agent:**
+   ```sh
+   deno run --allow-net --allow-env --allow-run --allow-write agent.ts \
+     --agentName="DiscordBot" \
+     --model="openai/o3-mini-high" \
+     --deployment=http \
+     --outputFile="./discord_bot/agent.ts"
+   ```
+
+2. **Modify the HTTP Handler:**
+   Update the HTTP handler in the generated agent to handle Discord's interaction format. Discord sends payloads differently, so you must adjust your HTTP handler to parse and reply according to Discord's webhook format.
+
+3. **Deploy to Supabase:**
+   ```sh
+   # Create a new Edge Function
+   supabase functions new discord-agent-bot
+   
+   # Copy the agent code to the function
+   cp discord_bot/agent.ts .supabase/functions/discord-agent-bot/index.ts
+   
+   # Set the OpenRouter API key
+   supabase secrets set OPENROUTER_API_KEY=your_key
+   
+   # Deploy the function
+   supabase functions deploy discord-agent-bot --no-verify-jwt
+   ```
+
+4. **Configure Discord Bot:**
+   - Create a new application in the [Discord Developer Portal](https://discord.com/developers/applications)
+   - Add a bot to the application
+   - Enable the Message Content Intent
+   - Create slash commands for the bot
+   - Set the Interactions Endpoint URL to your Supabase function URL
+   - Generate an invite link and add the bot to your server
+
+For a detailed deployment plan, see [discord_bot/plans/discord_bot_deployment_plan.md](../discord_bot/plans/discord_bot_deployment_plan.md).
 ---
 
 *For further questions or contributions, please contact rUv or visit the project repository.*
